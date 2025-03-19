@@ -86,3 +86,7 @@ Built with:
 - Socket.IO for real-time communication
 - Express for server-side
 - GSAP for animations
+
+## Acknowledgement
+
+Thanks for all the beta users!!
