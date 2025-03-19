@@ -1,0 +1,121 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>CS Shooter Game</title>
+  <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+  <!-- Loading Screen -->
+  <div id="loading-screen">
+    <div class="loading-content">
+      <h1>CS Shooter Game</h1>
+      <div class="spinner"></div>
+      <p>Loading game assets...</p>
+    </div>
+  </div>
+  
+  <!-- Login Screen -->
+  <div id="login-screen">
+    <div class="login-container">
+      <h1>CS Shooter Game</h1>
+      <div class="form-group">
+        <label for="player-name">Enter your name:</label>
+        <input type="text" id="player-name" maxlength="15" placeholder="Your Name">
+      </div>
+      <button id="join-game-btn">Join Game</button>
+    </div>
+  </div>
+  
+  <!-- Game Container (Three.js will render here) -->
+  <div id="game-container"></div>
+  
+  <!-- Game UI Elements -->
+  <div id="game-ui">
+    <div id="health-bar">
+      <div class="health-label">Health:</div>
+      <div class="health-value">100</div>
+      <div class="health-bar-outer">
+        <div class="health-bar-inner"></div>
+      </div>
+    </div>
+    
+    <div id="ammo-counter">
+      <div class="ammo-value">30</div>
+      <div class="ammo-label">/ 30</div>
+    </div>
+    
+    <div id="team-scores">
+      <div class="t-score">0</div>
+      <div class="score-divider">:</div>
+      <div class="ct-score">0</div>
+    </div>
+    
+    <div id="round-info">
+      <div class="round-label">Round</div>
+      <div class="round-value">0/15</div>
+      <div class="time-value">2:00</div>
+    </div>
+    
+    <div id="kill-feed"></div>
+    
+    <div id="crosshair">+</div>
+  </div>
+  
+  <!-- Round/Game End Screens -->
+  <div id="round-end-screen" class="overlay-screen">
+    <div class="overlay-content">
+      <h2 id="round-winner">Counter-Terrorists Win!</h2>
+      <div class="scores">
+        <div class="team-label t">Terrorists: <span class="t-score-value">0</span></div>
+        <div class="team-label ct">Counter-Terrorists: <span class="ct-score-value">0</span></div>
+      </div>
+      <div class="next-round-timer">Next round in <span id="next-round-time">5</span></div>
+    </div>
+  </div>
+  
+  <div id="game-end-screen" class="overlay-screen">
+    <div class="overlay-content">
+      <h2 id="game-winner">Counter-Terrorists Win!</h2>
+      <div class="scores">
+        <div class="team-label t">Terrorists: <span class="t-final-score">0</span></div>
+        <div class="team-label ct">Counter-Terrorists: <span class="ct-final-score">0</span></div>
+      </div>
+      <div class="player-stats">
+        <h3>Your Stats</h3>
+        <div class="stat">Kills: <span id="player-kills">0</span></div>
+        <div class="stat">Deaths: <span id="player-deaths">0</span></div>
+        <div class="stat">K/D Ratio: <span id="player-kd">0</span></div>
+      </div>
+      <div class="next-game-timer">Next game in <span id="next-game-time">10</span></div>
+    </div>
+  </div>
+  
+  <!-- Scripts -->
+  <script src="/socket.io/socket.io.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/three@0.158.0/build/three.min.js"></script>
+  <!-- GSAP for animations -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/gsap.min.js"></script>
+  <!-- Import PointerLockControls as module -->
+  <script type="importmap">
+    {
+      "imports": {
+        "three": "https://cdn.jsdelivr.net/npm/three@0.158.0/build/three.module.js",
+        "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.158.0/examples/jsm/"
+      }
+    }
+  </script>
+  <script type="module">
+    import { PointerLockControls } from 'three/addons/controls/PointerLockControls.js';
+    window.PointerLockControls = PointerLockControls;
+  </script>
+  
+  <script src="js/models.js"></script>
+  <script src="js/weapons.js"></script>
+  <script src="js/map.js"></script>
+  <script src="js/player.js"></script>
+  <script src="js/game.js"></script>
+  <script src="js/main.js"></script>
+</body>
+</html>

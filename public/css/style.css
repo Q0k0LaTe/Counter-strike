@@ -1,0 +1,398 @@
+/* Base Styles */
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+  }
+  
+  body {
+    font-family: Arial, Helvetica, sans-serif;
+    overflow: hidden;
+    background-color: #111;
+    color: #fff;
+  }
+  
+  /* Loading Screen */
+  #loading-screen {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background-color: #000;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    z-index: 1000;
+  }
+  
+  .loading-content {
+    text-align: center;
+  }
+  
+  .loading-content h1 {
+    font-size: 3rem;
+    margin-bottom: 2rem;
+    color: #ff9900;
+  }
+  
+  .spinner {
+    width: 60px;
+    height: 60px;
+    margin: 0 auto 1rem;
+    border: 5px solid rgba(255, 153, 0, 0.3);
+    border-radius: 50%;
+    border-top-color: #ff9900;
+    animation: spin 1s ease-in-out infinite;
+  }
+  
+  @keyframes spin {
+    to { transform: rotate(360deg); }
+  }
+  
+  /* Login Screen */
+  #login-screen {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(rgba(0, 0, 0, 0.7), rgba(0, 0, 0, 0.9)), url('../assets/background.jpg');
+    background-size: cover;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    z-index: 900;
+  }
+  
+  .login-container {
+    background-color: rgba(0, 0, 0, 0.8);
+    border-radius: 10px;
+    padding: 2rem;
+    width: 400px;
+    box-shadow: 0 0 20px rgba(255, 153, 0, 0.5);
+  }
+  
+  .login-container h1 {
+    font-size: 2rem;
+    text-align: center;
+    margin-bottom: 2rem;
+    color: #ff9900;
+  }
+  
+  .form-group {
+    margin-bottom: 1.5rem;
+  }
+  
+  .form-group label {
+    display: block;
+    margin-bottom: 0.5rem;
+    font-size: 1.1rem;
+  }
+  
+  .form-group input {
+    width: 100%;
+    padding: 0.8rem;
+    font-size: 1rem;
+    border: none;
+    border-radius: 5px;
+    background-color: #222;
+    color: #fff;
+  }
+  
+  #join-game-btn {
+    display: block;
+    width: 100%;
+    padding: 1rem;
+    font-size: 1.2rem;
+    background-color: #ff9900;
+    color: #000;
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+    transition: background-color 0.3s;
+  }
+  
+  #join-game-btn:hover {
+    background-color: #ffb340;
+  }
+  
+  /* Game Container */
+  #game-container {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+  }
+  
+  /* Game UI */
+  #game-ui {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    pointer-events: none;
+    z-index: 10;
+  }
+  
+  /* Health Bar */
+  #health-bar {
+    position: absolute;
+    bottom: 30px;
+    left: 30px;
+    display: flex;
+    align-items: center;
+  }
+  
+  .health-label {
+    font-size: 1.2rem;
+    margin-right: 10px;
+  }
+  
+  .health-value {
+    font-size: 1.5rem;
+    font-weight: bold;
+    margin-right: 10px;
+  }
+  
+  .health-bar-outer {
+    width: 200px;
+    height: 20px;
+    background-color: rgba(0, 0, 0, 0.5);
+    border: 2px solid #fff;
+    border-radius: 10px;
+    overflow: hidden;
+  }
+  
+  .health-bar-inner {
+    width: 100%;
+    height: 100%;
+    background-color: #00cc00;
+    transition: width 0.3s;
+  }
+  
+  /* Ammo Counter */
+  #ammo-counter {
+    position: absolute;
+    bottom: 30px;
+    right: 30px;
+    display: flex;
+    align-items: center;
+  }
+  
+  .ammo-value {
+    font-size: 2rem;
+    font-weight: bold;
+    margin-right: 5px;
+  }
+  
+  .ammo-label {
+    font-size: 1.2rem;
+  }
+  
+  /* Team Scores */
+  #team-scores {
+    position: absolute;
+    top: 20px;
+    left: 50%;
+    transform: translateX(-50%);
+    display: flex;
+    align-items: center;
+    background-color: rgba(0, 0, 0, 0.5);
+    padding: 5px 15px;
+    border-radius: 20px;
+  }
+  
+  .t-score {
+    font-size: 1.8rem;
+    font-weight: bold;
+    color: #ff9900;
+  }
+  
+  .ct-score {
+    font-size: 1.8rem;
+    font-weight: bold;
+    color: #00ccff;
+  }
+  
+  .score-divider {
+    font-size: 1.8rem;
+    margin: 0 10px;
+  }
+  
+  /* Round Info */
+  #round-info {
+    position: absolute;
+    top: 70px;
+    left: 50%;
+    transform: translateX(-50%);
+    text-align: center;
+  }
+  
+  .round-label {
+    font-size: 1rem;
+  }
+  
+  .round-value {
+    font-size: 1.2rem;
+    margin-bottom: 5px;
+  }
+  
+  .time-value {
+    font-size: 1.5rem;
+    font-weight: bold;
+  }
+  
+  /* Kill Feed */
+  #kill-feed {
+    position: absolute;
+    top: 20px;
+    right: 20px;
+    width: 300px;
+    max-height: 200px;
+    overflow: hidden;
+  }
+  
+  .kill-message {
+    background-color: rgba(0, 0, 0, 0.7);
+    margin-bottom: 5px;
+    padding: 5px 10px;
+    border-radius: 5px;
+    font-size: 0.9rem;
+    animation: fadeOut 4s forwards;
+  }
+  
+  @keyframes fadeOut {
+    0% { opacity: 1; }
+    70% { opacity: 1; }
+    100% { opacity: 0; }
+  }
+  
+  .killer {
+    font-weight: bold;
+  }
+  
+  .t-player {
+    color: #ff9900;
+  }
+  
+  .ct-player {
+    color: #00ccff;
+  }
+  
+  /* Crosshair */
+  #crosshair {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    font-size: 2rem;
+    color: rgba(255, 255, 255, 0.8);
+  }
+  
+  /* Overlay Screens */
+  .overlay-screen {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(0, 0, 0, 0.8);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    z-index: 100;
+    display: none;
+  }
+  
+  .overlay-content {
+    background-color: rgba(20, 20, 20, 0.9);
+    border-radius: 10px;
+    padding: 2rem;
+    min-width: 500px;
+    box-shadow: 0 0 20px rgba(255, 255, 255, 0.1);
+    text-align: center;
+  }
+  
+  .overlay-content h2 {
+    font-size: 2.5rem;
+    margin-bottom: 1.5rem;
+  }
+  
+  .scores {
+    margin-bottom: 2rem;
+  }
+  
+  .team-label {
+    font-size: 1.3rem;
+    margin: 0.5rem 0;
+  }
+  
+  .team-label.t {
+    color: #ff9900;
+  }
+  
+  .team-label.ct {
+    color: #00ccff;
+  }
+  
+  .next-round-timer, .next-game-timer {
+    font-size: 1.2rem;
+    margin-top: 1.5rem;
+  }
+  
+  .player-stats {
+    margin: 1.5rem 0;
+    padding: 1rem;
+    background-color: rgba(255, 255, 255, 0.1);
+    border-radius: 5px;
+  }
+  
+  .player-stats h3 {
+    margin-bottom: 1rem;
+  }
+  
+  .stat {
+    font-size: 1.1rem;
+    margin: 0.5rem 0;
+  }
+  
+  /* T-side winner styles */
+  .t-winner {
+    color: #ff9900;
+    text-shadow: 0 0 10px rgba(255, 153, 0, 0.7);
+  }
+  
+  /* CT-side winner styles */
+  .ct-winner {
+    color: #00ccff;
+    text-shadow: 0 0 10px rgba(0, 204, 255, 0.7);
+  }
+  
+  /* Hit marker */
+  .hit-marker {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    color: #fff;
+    font-size: 2.5rem;
+    font-weight: bold;
+    text-shadow: 0 0 5px #f00;
+    pointer-events: none;
+  }
+  
+  /* Game message */
+  .game-message {
+    position: absolute;
+    top: 120px;
+    left: 50%;
+    transform: translateX(-50%);
+    background-color: rgba(0, 0, 0, 0.7);
+    padding: 10px 20px;
+    border-radius: 5px;
+    font-size: 1.2rem;
+    text-align: center;
+  }
