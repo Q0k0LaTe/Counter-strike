@@ -257,6 +257,28 @@ class Player {
         setTimeout(() => {
           document.body.removeChild(flashOverlay);
         }, 200);
+      } else if (this.isBot) {
+        // Bot visual feedback - red flash
+        const originalMaterials = [];
+        
+        // Store original materials and change to red
+        this.model.traverse(child => {
+          if (child.isMesh && child.material) {
+            originalMaterials.push({
+              mesh: child,
+              material: child.material
+            });
+            
+            child.material = new THREE.MeshBasicMaterial({ color: 0xff0000 });
+          }
+        });
+        
+        // Reset materials after short delay
+        setTimeout(() => {
+          originalMaterials.forEach(item => {
+            item.mesh.material = item.material;
+          });
+        }, 100);
       }
       
       // Check if dead
@@ -287,6 +309,15 @@ class Player {
         document.querySelector('.health-value').textContent = '0';
         document.querySelector('.health-bar-inner').style.width = '0%';
       }
+      
+      // Respawn bots after a delay
+      if (this.isBot) {
+        setTimeout(() => {
+          if (this.game.gameRunning) {
+            this.respawn();
+          }
+        }, 5000); // 5 second respawn time for bots
+      }
     }
     
     respawn(position) {
@@ -300,7 +331,7 @@ class Player {
       } else {
         // Default spawn based on team
         const spawnX = this.team === 't' ? -20 : 20;
-        this.model.position.set(spawnX, 1.6, 0);
+        this.model.position.set(spawnX, 0, 0); // Fixed Y position to 0 for bots
       }
       
       // Show model (unless local player)

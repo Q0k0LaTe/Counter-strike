@@ -155,19 +155,135 @@ class Game {
     }
     
     adjustWeaponProperties() {
-      // Slow down fire rates to make shooting more manageable
+      // No need to slow down fire rates anymore - we want faster shooting
       if (this.weapon) {
-        // Reduce fire rates (higher number = slower firing)
-        this.weapon.fireRate = this.weapon.fireRate / 3;
-        
-        // Increase recoil for more noticeable effect
-        this.weapon.recoil = this.weapon.recoil * 1.5;
-        
         console.log("Weapon properties adjusted:", this.weapon);
       }
+      
+      // Auto-fire if holding mouse button
+      if (this.shooting && this.weapon.automatic) {
+        this.shoot();
+      }
+      
+      // Update bullets
+      for (let i = this.bullets.length - 1; i >= 0; i--) {
+        const active = this.bullets[i].update(deltaTime);
+        if (!active) {
+          this.bullets.splice(i, 1);
+        }
+      }
+      
+      // Update effects
+      for (let i = this.effects.length - 1; i >= 0; i--) {
+        const active = this.effects[i](deltaTime);
+        if (!active) {
+          this.effects.splice(i, 1);
+        }
+      }
+      
+      // Bullet collision detection
+      for (let i = this.bullets.length - 1; i >= 0; i--) {
+        const bullet = this.bullets[i];
+        if (!bullet.active) continue;
+        
+        // Get shooter's team
+        let shooterTeam = null;
+        if (bullet.owner === this.socket.id) {
+          shooterTeam = this.localPlayer.team;
+        } else if (this.players[bullet.owner]) {
+          shooterTeam = this.players[bullet.owner].team;
+        } else if (bullet.owner.startsWith('bot_')) {
+          // Extract team from bot ID (format: bot_t_0 or bot_ct_0)
+          shooterTeam = bullet.owner.split('_')[1];
+        }
+        
+        if (!shooterTeam) continue;
+        
+        // Check for collisions with map objects first
+        const bulletPosition = bullet.mesh.position.clone();
+        const bulletRadius = 0.1;
+        const bulletSphere = new THREE.Sphere(bulletPosition, bulletRadius);
+        
+        let collision = false;
+        
+        // Check for player collisions if no map collision
+        if (!collision) {
+          // Get all potential targets (other team)
+          const potentialTargets = Object.values(this.players).filter(player => 
+            player.alive && player.team !== shooterTeam
+          );
+          
+          for (const target of potentialTargets) {
+            // Skip if it's a bot bullet hitting another bot (for performance)
+            if (bullet.owner.startsWith('bot_') && target.isBot) continue;
+            
+            // Create a collision box for the target
+            const targetBox = new THREE.Box3().setFromObject(target.model);
+            
+            if (targetBox.intersectsSphere(bulletSphere)) {
+              collision = true;
+              
+              // Apply damage
+              const damage = 25; // Standard damage
+              target.takeDamage(damage);
+              
+              // Create hit effect
+              const hitPosition = bulletPosition.clone();
+              const hitEffect = createBulletImpact(
+                this.scene,
+                hitPosition,
+                bullet.direction.clone().negate()
+              );
+              this.effects.push(hitEffect);
+              
+              // If target is local player, update health
+              if (target.id === this.socket.id && this.localPlayer) {
+                this.localPlayer.takeDamage(damage);
+                
+                // Show hit marker for player who got the hit
+                if (bullet.owner !== this.socket.id && this.players[bullet.owner]) {
+                  this.players[bullet.owner].showHitMarker();
+                }
+              }
+              
+              // Add kill feed message if target died
+              if (target.health <= 0) {
+                const shooterName = bullet.owner === this.socket.id ? 
+                  this.localPlayer.name : 
+                  (this.players[bullet.owner] ? this.players[bullet.owner].name : "Bot");
+                
+                this.addKillFeedMessage(`${shooterName} killed ${target.name}`, shooterTeam);
+                
+                // Update shooter stats
+                if (bullet.owner === this.socket.id) {
+                  this.localPlayer.kills++;
+                } else if (this.players[bullet.owner]) {
+                  this.players[bullet.owner].kills++;
+                }
+              }
+              
+              break;
+            }
+          }
+        }
+        
+        // Remove bullet if there was a collision
+        if (collision) {
+          bullet.remove();
+          this.bullets.splice(i, 1);
+        }
+      animate(); {
+      requestAnimationFrame(this.animate);
+      
+      const deltaTime = Math.min(this.clock.getDelta(), 0.1);
+      this.update(deltaTime);
+      
+      // Render the scene
+      this.renderer.render(this.scene, this.camera);
     }
+  }
     
-    initEventListeners() {
+    initEventListeners() ;{
       // Keyboard events
       document.addEventListener('keydown', this.onKeyDown);
       document.addEventListener('keyup', this.onKeyUp);
@@ -178,7 +294,7 @@ class Game {
       document.addEventListener('mouseup', this.onMouseUp);
     }
     
-    onKeyDown(event) {
+    onKeyDown(event) ;{
       if (!this.gameRunning || !this.controls.isLocked) return;
       
       switch (event.code) {
@@ -203,7 +319,7 @@ class Game {
       }
     }
     
-    onKeyUp(event) {
+    onKeyUp(event) ;{
       if (!this.gameRunning) return;
       
       switch (event.code) {
@@ -225,7 +341,7 @@ class Game {
       }
     }
     
-    onMouseMove(event) {
+    onMouseMove(event); {
       if (!this.gameRunning || !this.controls.isLocked) return;
       
       // Update mouse position for raycasting
@@ -233,7 +349,7 @@ class Game {
       this.mouse.y = -(event.clientY / window.innerHeight) * 2 + 1;
     }
     
-    onMouseDown(event) {
+    onMouseDown(event); {
       if (!this.gameRunning || !this.controls.isLocked) return;
       
       // Left mouse button (shoot)
@@ -243,7 +359,7 @@ class Game {
       }
     }
     
-    onMouseUp(event) {
+    onMouseUp(event); {
       if (!this.gameRunning) return;
       
       // Left mouse button
@@ -252,7 +368,7 @@ class Game {
       }
     }
     
-    connect() {
+    connect(); {
       // Connect to server
       this.socket = io();
       
@@ -316,7 +432,7 @@ class Game {
       });
     }
     
-    joinGame() {
+    joinGame() ;{
       // Send join request to server
       this.socket.emit('joinGame', {
         name: this.playerName
@@ -327,7 +443,7 @@ class Game {
       this.controls.lock();
     }
     
-    handleGameState(gameState) {
+    handleGameState(gameState); {
       // Add all existing players
       Object.values(gameState.players).forEach(playerData => {
         if (playerData.id !== this.socket.id) {
@@ -368,7 +484,7 @@ class Game {
       }, 2000);
     }
     
-    spawnBots() {
+    spawnBots() ;{
       const teamSizes = {
         t: 0,
         ct: 0
@@ -390,8 +506,9 @@ class Game {
             id: botId,
             name: 'Bot_' + team.toUpperCase() + '_' + i,
             team: team,
-            position: team === 't' ? {x: -15 + Math.random() * 5, y: 1.6, z: Math.random() * 10 - 5} 
-                                 : {x: 15 - Math.random() * 5, y: 1.6, z: Math.random() * 10 - 5},
+            position: team === 't' ? 
+              {x: -15 + Math.random() * 5, y: 0, z: Math.random() * 10 - 5} : 
+              {x: 15 - Math.random() * 5, y: 0, z: Math.random() * 10 - 5},
             rotation: {x: 0, y: team === 't' ? Math.PI / 2 : -Math.PI / 2, z: 0},
             health: 100,
             weapon: 'rifle',
@@ -405,98 +522,227 @@ class Game {
           // Add bot to players list
           this.addPlayer(botData);
           
-          // Make bots move randomly
+          // Make bots move and shoot
           this.startBotBehavior(botId);
         }
       }
     }
     
-    startBotBehavior(botId) {
+    startBotBehavior(botId) ;{
       const bot = this.players[botId];
       if (!bot) return;
       
-      // Set up random movement interval
+      // Bot state
+      const botState = {
+        movementTarget: null,
+        movementSpeed: 1 + Math.random() * 1.5, // Random speed between 1 and 2.5
+        rotationTarget: bot.model.rotation.y,
+        lastRotationChange: Date.now(),
+        nextRotationChange: 2000 + Math.random() * 3000, // 2-5 seconds
+        lastShot: 0,
+        shootCooldown: 1000 + Math.random() * 2000 // 1-3 seconds
+      };
+      
+      // Define spawn area boundaries based on team
+      const boundaries = bot.team === 't' ? 
+        { minX: -23, maxX: -8, minZ: -23, maxZ: 23 } : 
+        { minX: 8, maxX: 23, minZ: -23, maxZ: 23 };
+      
+      // Set up movement interval
       const moveInterval = setInterval(() => {
         if (!this.gameRunning || !bot || !bot.alive) {
           clearInterval(moveInterval);
           return;
         }
         
-        // Random movement
-        const newPos = {
-          x: bot.model.position.x + (Math.random() - 0.5) * 2,
-          y: bot.model.position.y,
-          z: bot.model.position.z + (Math.random() - 0.5) * 2
-        };
-        
-        // Keep within team area boundaries
-        if (bot.team === 't') {
-          newPos.x = Math.max(-23, Math.min(-8, newPos.x));
-        } else {
-          newPos.x = Math.max(8, Math.min(23, newPos.x));
+        // Fix Y position to ensure bots are on the ground
+        if (bot.model.position.y !== 0) {
+          bot.model.position.y = 0;
         }
         
-        newPos.z = Math.max(-23, Math.min(23, newPos.z));
-        
-        // Update position
-        bot.model.position.set(newPos.x, newPos.y, newPos.z);
-        
-        // Random rotation
-        const newRotY = bot.model.rotation.y + (Math.random() - 0.5) * 0.5;
-        bot.model.rotation.y = newRotY;
-        
-        // Occasionally shoot
-        if (Math.random() < 0.2) {
-          // Create direction vector from bot position facing forward
-          const direction = new THREE.Vector3(0, 0, -1);
-          direction.applyQuaternion(bot.model.quaternion);
+        // Generate new target if we don't have one or we're close to current target
+        if (!botState.movementTarget || 
+            new THREE.Vector2(bot.model.position.x, bot.model.position.z)
+              .distanceTo(new THREE.Vector2(botState.movementTarget.x, botState.movementTarget.z)) < 0.5) {
           
-          // Create bullet
-          const bullet = new Bullet(
-            this.scene,
-            bot.model.position.clone(),
-            direction,
-            100,
-            botId
+          // Choose new target within team boundaries
+          botState.movementTarget = {
+            x: boundaries.minX + Math.random() * (boundaries.maxX - boundaries.minX),
+            y: 0,
+            z: boundaries.minZ + Math.random() * (boundaries.maxZ - boundaries.minZ)
+          };
+          
+          // Face movement direction
+          const moveDirection = new THREE.Vector2(
+            botState.movementTarget.x - bot.model.position.x,
+            botState.movementTarget.z - bot.model.position.z
           );
           
-          this.bullets.push(bullet);
-          
-          // Show muzzle flash
-          const muzzleFlashEffect = createMuzzleFlash(
-            this.scene, 
-            bot.model.position.clone(), 
-            direction
-          );
-          this.effects.push(muzzleFlashEffect);
-        }
-      }, 1000);
-      
-      // Occasionally take aim at the player
-      const aimInterval = setInterval(() => {
-        if (!this.gameRunning || !bot || !bot.alive || !this.localPlayer) {
-          clearInterval(aimInterval);
-          return;
+          if (moveDirection.length() > 0) {
+            botState.rotationTarget = Math.atan2(moveDirection.x, moveDirection.y);
+          }
         }
         
-        // 25% chance to aim at player
-        if (Math.random() < 0.25) {
-          // Get direction to player
-          const toPlayer = new THREE.Vector3();
-          toPlayer.subVectors(this.camera.position, bot.model.position);
-          toPlayer.y = 0; // Keep on horizontal plane
+        // Smooth rotation to target
+        const currentRotation = bot.model.rotation.y;
+        const rotationDiff = botState.rotationTarget - currentRotation;
+        
+        // Handle angle wrapping
+        let shortestRotation = rotationDiff;
+        if (rotationDiff > Math.PI) shortestRotation = rotationDiff - 2 * Math.PI;
+        if (rotationDiff < -Math.PI) shortestRotation = rotationDiff + 2 * Math.PI;
+        
+        // Apply smooth rotation
+        bot.model.rotation.y += shortestRotation * 0.1;
+        
+        // Move toward target
+        if (botState.movementTarget) {
+          const direction = new THREE.Vector3(
+            botState.movementTarget.x - bot.model.position.x,
+            0,
+            botState.movementTarget.z - bot.model.position.z
+          ).normalize();
           
-          // Set bot rotation to face player
-          bot.model.lookAt(
-            bot.model.position.x + toPlayer.x,
-            bot.model.position.y,
-            bot.model.position.z + toPlayer.z
-          );
+          // Apply movement at bot's speed
+          const moveAmount = botState.movementSpeed * 0.05; // Adjust for frame rate
+          bot.model.position.x += direction.x * moveAmount;
+          bot.model.position.z += direction.z * moveAmount;
+          
+          // Keep within boundaries
+          bot.model.position.x = Math.max(boundaries.minX, Math.min(boundaries.maxX, bot.model.position.x));
+          bot.model.position.z = Math.max(boundaries.minZ, Math.min(boundaries.maxZ, bot.model.position.z));
         }
-      }, 2000);
+        
+        // Random rotation changes
+        const now = Date.now();
+        if (now - botState.lastRotationChange > botState.nextRotationChange) {
+          botState.rotationTarget = Math.random() * Math.PI * 2; // Random direction
+          botState.lastRotationChange = now;
+          botState.nextRotationChange = 2000 + Math.random() * 3000; // 2-5 seconds
+        }
+        
+        // Check for enemies in line of sight
+        if (now - botState.lastShot > botState.shootCooldown) {
+          // Find potential targets (players on opposite team)
+          const targets = Object.values(this.players).filter(player => 
+            player.team !== bot.team && player.alive && player.id !== botId
+          );
+          
+          if (targets.length > 0) {
+            // Choose random target or nearest
+            const target = targets[Math.floor(Math.random() * targets.length)];
+            
+            // Calculate direction to target
+            const toTarget = new THREE.Vector3();
+            toTarget.subVectors(target.model.position, bot.model.position);
+            toTarget.y = 0; // Keep on horizontal plane
+            
+            // Check if target is in front of bot (within field of view)
+            const forward = new THREE.Vector3(0, 0, -1).applyQuaternion(bot.model.quaternion);
+            const angleToTarget = forward.angleTo(toTarget);
+            
+            // If target is in front (within 60 degrees) and not too far
+            if (angleToTarget < Math.PI/3 && toTarget.length() < 30) {
+              // Turn to face target
+              bot.model.lookAt(
+                bot.model.position.x + toTarget.x,
+                bot.model.position.y,
+                bot.model.position.z + toTarget.z
+              );
+              
+              // Shoot at target
+              const direction = toTarget.normalize();
+              
+              // Create bullet
+              const bullet = new Bullet(
+                this.scene,
+                new THREE.Vector3(
+                  bot.model.position.x,
+                  bot.model.position.y + 1.1, // Bullet comes from gun height
+                  bot.model.position.z
+                ),
+                direction,
+                300, // Same speed as player bullets
+                botId
+              );
+              
+              this.bullets.push(bullet);
+              
+              // Show muzzle flash
+              const muzzleFlashEffect = createMuzzleFlash(
+                this.scene, 
+                new THREE.Vector3(
+                  bot.model.position.x + direction.x * 0.5,
+                  bot.model.position.y + 1.1,
+                  bot.model.position.z + direction.z * 0.5
+                ), 
+                direction
+              );
+              this.effects.push(muzzleFlashEffect);
+              
+              // Reset shot cooldown
+              botState.lastShot = now;
+              botState.shootCooldown = 500 + Math.random() * 1500; // 0.5-2 seconds
+              
+              // Check if shot hits target
+              const raycaster = new THREE.Raycaster(
+                new THREE.Vector3(
+                  bot.model.position.x,
+                  bot.model.position.y + 1.1,
+                  bot.model.position.z
+                ),
+                direction
+              );
+              
+              // Add slight inaccuracy
+              const inaccuracy = 0.1;
+              raycaster.ray.direction.x += (Math.random() - 0.5) * inaccuracy;
+              raycaster.ray.direction.y += (Math.random() - 0.5) * inaccuracy;
+              raycaster.ray.direction.z += (Math.random() - 0.5) * inaccuracy;
+              raycaster.ray.direction.normalize();
+              
+              // Check for hits on players
+              const playerMeshes = Object.values(this.players)
+                .filter(p => p.alive && p.id !== botId)
+                .map(p => p.model);
+              
+              if (playerMeshes.length > 0) {
+                const intersects = raycaster.intersectObjects(playerMeshes, true);
+                
+                if (intersects.length > 0) {
+                  // Find which player was hit
+                  const hitPlayerObj = intersects[0].object;
+                  let hitPlayerId = null;
+                  
+                  // Find the player that owns the hit object
+                  for (const pid in this.players) {
+                    const p = this.players[pid];
+                    if (p.model === hitPlayerObj || p.model.children.includes(hitPlayerObj)) {
+                      hitPlayerId = pid;
+                      break;
+                    }
+                  }
+                  
+                  if (hitPlayerId) {
+                    // Apply damage (same as player shots)
+                    if (this.players[hitPlayerId]) {
+                      this.players[hitPlayerId].takeDamage(25);
+                      
+                      // If hit player is local player
+                      if (hitPlayerId === this.socket.id && this.localPlayer) {
+                        this.localPlayer.takeDamage(25);
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }, 50); // Run at 20fps for smoother movement
     }
     
-    addPlayer(playerData) {
+    addPlayer(playerData) ;{
       if (playerData.id === this.socket.id) return;
       
       // Create new player
@@ -511,7 +757,7 @@ class Game {
       }
     }
     
-    updatePlayerPosition(moveData) {
+    updatePlayerPosition(moveData) ;{
       const player = this.players[moveData.id];
       if (player) {
         player.update({
@@ -521,7 +767,7 @@ class Game {
       }
     }
     
-    handlePlayerShot(shotData) {
+    handlePlayerShot(shotData) ;{
       const player = this.players[shotData.playerId];
       if (player) {
         // Play shooting animation
@@ -548,18 +794,15 @@ class Game {
           this.scene,
           position,
           direction,
-          shotData.bullet.speed,
+          300, // Faster bullet speed (was 100)
           shotData.bullet.owner
         );
         
         this.bullets.push(bullet);
-        
-        // Play sound
-        // this.playSound(player.weapon.getAudioFile());
       }
     }
     
-    handlePlayerHit(hitData) {
+    handlePlayerHit(hitData) ;{
       const player = this.players[hitData.targetId];
       if (player) {
         player.update({ health: hitData.health });
@@ -572,22 +815,19 @@ class Game {
       
       // If local player got a hit
       if (hitData.shooterId === this.socket.id) {
-        // Play hit marker sound
-        // this.playSound('sounds/hit_marker.mp3');
-        
         // Show hit marker
         this.showHitMarker();
       }
     }
     
-    handlePlayerReload(reloadData) {
+    handlePlayerReload(reloadData) ;{
       const player = this.players[reloadData.playerId];
       if (player) {
         player.reload();
       }
     }
     
-    removePlayer(playerId) {
+    removePlayer(playerId) ;{
       if (this.players[playerId]) {
         // Remove player model
         this.players[playerId].remove();
@@ -597,7 +837,7 @@ class Game {
       }
     }
     
-    handleGameStart(gameData) {
+    handleGameStart(gameData) ;{
       // Update UI
       this.updateRoundDisplay(gameData.round, gameData.maxRounds);
       
@@ -608,7 +848,7 @@ class Game {
       this.showMessage('Game Started!', 3000);
     }
     
-    handleRoundStart(roundData) {
+    handleRoundStart(roundData); {
       // Update round display
       this.updateRoundDisplay(roundData.round, 15);
       
@@ -627,7 +867,7 @@ class Game {
       document.getElementById('round-end-screen').style.display = 'none';
     }
     
-    handleRoundEnd(roundData) {
+    handleRoundEnd(roundData); {
       // Update scores
       this.updateScoreDisplay(roundData.tScore, roundData.ctScore);
       
@@ -668,7 +908,7 @@ class Game {
       }, 1000);
     }
     
-    handleGameEnd(gameData) {
+    handleGameEnd(gameData) ;{
       // Update scores
       this.updateScoreDisplay(gameData.tScore, gameData.ctScore);
       
@@ -725,23 +965,23 @@ class Game {
       }, 1000);
     }
     
-    updateTimeDisplay(timeRemaining) {
+    updateTimeDisplay(timeRemaining); {
       const minutes = Math.floor(timeRemaining / 60);
       const seconds = timeRemaining % 60;
       const timeString = `${minutes}:${seconds.toString().padStart(2, '0')}`;
       document.querySelector('.time-value').textContent = timeString;
     }
     
-    updateScoreDisplay(tScore, ctScore) {
+    updateScoreDisplay(tScore, ctScore) ;{
       document.querySelector('.t-score').textContent = tScore;
       document.querySelector('.ct-score').textContent = ctScore;
     }
     
-    updateRoundDisplay(currentRound, maxRounds) {
+    updateRoundDisplay(currentRound, maxRounds); {
       document.querySelector('.round-value').textContent = `${currentRound}/${maxRounds}`;
     }
     
-    handleDisconnect() {
+    handleDisconnect() ;{
       // Show message
       this.showMessage('Disconnected from server. Refresh to reconnect.', 0);
       
@@ -764,61 +1004,7 @@ class Game {
       this.showLoginScreen();
     }
     
-    shoot() {
-      if (!this.localPlayer || !this.localPlayer.alive || !this.canShoot) return;
-      
-      const now = performance.now();
-      const timeSinceLastShot = now - this.lastShotTime;
-      
-      // Limit fire rate based on weapon
-      if ((this.weapon.automatic && timeSinceLastShot > (1000 / this.weapon.fireRate))
-          || (!this.weapon.automatic && timeSinceLastShot > (1000 / this.weapon.fireRate) && this.shooting)) {
-        
-        // Get camera direction
-        this.raycaster.setFromCamera(new THREE.Vector2(0, 0), this.camera);
-        
-        // Apply weapon spread
-        const spread = this.weapon.fire().spread;
-        const direction = this.raycaster.ray.direction.clone();
-        direction.x += spread.x;
-        direction.y += spread.y;
-        direction.normalize();
-        
-        // Send shot to server
-        this.socket.emit('playerShoot', {
-          direction: {
-            x: direction.x,
-            y: direction.y,
-            z: direction.z
-          }
-        });
-        
-        // Apply recoil as temporary view shake (not permanent movement)
-        this.applyViewShake(this.weapon.fire().recoil);
-        
-        // Update ammo display
-        this.localPlayer.ammo--;
-        document.querySelector('.ammo-value').textContent = this.localPlayer.ammo;
-        
-        // Update last shot time
-        this.lastShotTime = now;
-        
-        // Check if out of ammo
-        if (this.localPlayer.ammo <= 0) {
-          this.reload();
-        }
-        
-        // Add cooldown for non-automatic weapons
-        if (!this.weapon.automatic) {
-          this.canShoot = false;
-          setTimeout(() => {
-            this.canShoot = true;
-          }, 1000 / this.weapon.fireRate);
-        }
-      }
-    }
-    
-    applyViewShake(amount) {
+    applyViewShake(amount) ;{
       // Save original rotation
       const originalRotation = this.camera.rotation.x;
       
@@ -832,32 +1018,21 @@ class Game {
       // Return to original position with a slight delay
       setTimeout(() => {
         // Use GSAP for smooth transition back
-        gsap.to(this.camera.rotation, {
-          x: originalRotation,
-          y: this.camera.rotation.y - horizontalShake,
-          duration: 0.1
-        });
+        try {
+          gsap.to(this.camera.rotation, {
+            x: originalRotation,
+            y: this.camera.rotation.y - horizontalShake,
+            duration: 0.1
+          });
+        } catch (e) {
+          // Fallback if GSAP isn't available
+          this.camera.rotation.x = originalRotation;
+          this.camera.rotation.y -= horizontalShake;
+        }
       }, 50);
     }
     
-    reload() {
-      if (!this.localPlayer || !this.localPlayer.alive) return;
-      
-      // Send reload to server
-      this.socket.emit('playerReload');
-      
-      // Local reload effect
-      this.localPlayer.reload();
-      this.showMessage('Reloading...', 1500);
-      
-      // Disable shooting during reload
-      this.canShoot = false;
-      setTimeout(() => {
-        this.canShoot = true;
-      }, this.weapon.reloadTime * 1000);
-    }
-    
-    showHitMarker() {
+    showHitMarker() ;{
       // Create hit marker element
       const hitMarker = document.createElement('div');
       hitMarker.className = 'hit-marker';
@@ -866,37 +1041,13 @@ class Game {
       
       // Remove after a short time
       setTimeout(() => {
-        document.getElementById('game-ui').removeChild(hitMarker);
+        if (document.getElementById('game-ui').contains(hitMarker)) {
+          document.getElementById('game-ui').removeChild(hitMarker);
+        }
       }, 100);
     }
     
-    addKillFeedMessage(message, team) {
-      const killFeed = document.getElementById('kill-feed');
-      const killMessage = document.createElement('div');
-      killMessage.className = 'kill-message';
-      
-      // Add team color class if team is provided
-      if (team) {
-        killMessage.classList.add(team === 't' ? 't-player' : 'ct-player');
-      }
-      
-      killMessage.textContent = message;
-      killFeed.appendChild(killMessage);
-      
-      // Remove oldest message if more than 5
-      if (killFeed.children.length > 5) {
-        killFeed.removeChild(killFeed.children[0]);
-      }
-      
-      // Auto-remove after a few seconds
-      setTimeout(() => {
-        if (killFeed.contains(killMessage)) {
-          killFeed.removeChild(killMessage);
-        }
-      }, 5000);
-    }
-    
-    showMessage(message, duration) {
+    showMessage(message, duration); {
       const messageElement = document.createElement('div');
       messageElement.className = 'game-message';
       messageElement.textContent = message;
@@ -912,133 +1063,99 @@ class Game {
       }
     }
     
-    showLoadingScreen() {
+    showLoadingScreen() ;{
       document.getElementById('loading-screen').style.display = 'flex';
     }
     
-    hideLoadingScreen() {
-        document.getElementById('loading-screen').style.display = 'none';
-      }
-      
-      showLoginScreen() {
-        document.getElementById('login-screen').style.display = 'flex';
-      }
-      
-      hideLoginScreen() {
-        document.getElementById('login-screen').style.display = 'none';
-      }
-      
-      onWindowResize() {
-        this.camera.aspect = window.innerWidth / window.innerHeight;
-        this.camera.updateProjectionMatrix();
-        this.renderer.setSize(window.innerWidth, window.innerHeight);
-      }
-      
-      update(deltaTime) {
-        // Handle player movement
-        if (this.gameRunning && this.controls.isLocked && this.localPlayer && this.localPlayer.alive) {
-          const speed = this.movement.sprint ? this.moveSpeed * 1.5 : this.moveSpeed;
-          const moveDistance = speed * deltaTime;
-          
-          // Get movement direction
-          const direction = new THREE.Vector3();
-          
-          // Forward/backward
-          if (this.movement.forward) {
-            direction.z -= 1;
-          }
-          if (this.movement.backward) {
-            direction.z += 1;
-          }
-          
-          // Left/right
-          if (this.movement.left) {
-            direction.x -= 1;
-          }
-          if (this.movement.right) {
-            direction.x += 1;
-          }
-          
-          // Normalize for consistent speed in all directions
-          if (direction.length() > 0) {
-            direction.normalize();
-          }
-          
-          // Apply camera rotation to movement direction
-          direction.applyQuaternion(this.camera.quaternion);
-          
-          // Zero out Y component to keep movement horizontal
-          direction.y = 0;
+    hideLoadingScreen(); {
+      document.getElementById('loading-screen').style.display = 'none';
+    }
+    
+    showLoginScreen(); {
+      document.getElementById('login-screen').style.display = 'flex';
+    }
+    
+    onWindowResize() ;{
+      this.camera.aspect = window.innerWidth / window.innerHeight;
+      this.camera.updateProjectionMatrix();
+      this.renderer.setSize(window.innerWidth, window.innerHeight);
+    }
+    
+    update(deltaTime) ;{
+      // Handle player movement
+      if (this.gameRunning && this.controls.isLocked && this.localPlayer && this.localPlayer.alive) {
+        const speed = this.movement.sprint ? this.moveSpeed * 1.5 : this.moveSpeed;
+        const moveDistance = speed * deltaTime;
+        
+        // Get movement direction
+        const direction = new THREE.Vector3();
+        
+        // Forward/backward
+        if (this.movement.forward) {
+          direction.z -= 1;
+        }
+        if (this.movement.backward) {
+          direction.z += 1;
+        }
+        
+        // Left/right
+        if (this.movement.left) {
+          direction.x -= 1;
+        }
+        if (this.movement.right) {
+          direction.x += 1;
+        }
+        
+        // Normalize for consistent speed in all directions
+        if (direction.length() > 0) {
           direction.normalize();
+        }
+        
+        // Apply camera rotation to movement direction
+        direction.applyQuaternion(this.camera.quaternion);
+        
+        // Zero out Y component to keep movement horizontal
+        direction.y = 0;
+        direction.normalize();
+        
+        // Calculate new position
+        const newPosition = this.camera.position.clone();
+        newPosition.x += direction.x * moveDistance;
+        newPosition.z += direction.z * moveDistance;
+        
+        // Collision detection
+        const playerRadius = 0.3;
+        let canMove = true;
+        
+        // Check collision with map objects
+        this.collidableObjects.forEach(object => {
+          const objectBounds = new THREE.Box3().setFromObject(object);
+          const playerBounds = new THREE.Sphere(newPosition, playerRadius);
           
-          // Calculate new position
-          const newPosition = this.camera.position.clone();
-          newPosition.x += direction.x * moveDistance;
-          newPosition.z += direction.z * moveDistance;
+          if (objectBounds.intersectsSphere(playerBounds)) {
+            canMove = false;
+          }
+        });
+        
+        // Move if no collision
+        if (canMove) {
+          this.camera.position.copy(newPosition);
           
-          // Collision detection
-          const playerRadius = 0.3;
-          let canMove = true;
-          
-          // Check collision with map objects
-          this.collidableObjects.forEach(object => {
-            const objectBounds = new THREE.Box3().setFromObject(object);
-            const playerBounds = new THREE.Sphere(newPosition, playerRadius);
-            
-            if (objectBounds.intersectsSphere(playerBounds)) {
-              canMove = false;
+          // Send position update to server
+          this.socket.emit('playerMove', {
+            position: {
+              x: this.camera.position.x,
+              y: this.camera.position.y,
+              z: this.camera.position.z
+            },
+            rotation: {
+              x: this.camera.rotation.x,
+              y: this.camera.rotation.y,
+              z: this.camera.rotation.z
             }
           });
-          
-          // Move if no collision
-          if (canMove) {
-            this.camera.position.copy(newPosition);
-            
-            // Send position update to server
-            this.socket.emit('playerMove', {
-              position: {
-                x: this.camera.position.x,
-                y: this.camera.position.y,
-                z: this.camera.position.z
-              },
-              rotation: {
-                x: this.camera.rotation.x,
-                y: this.camera.rotation.y,
-                z: this.camera.rotation.z
-              }
-            });
-          }
         }
-        
-        // Auto-fire if holding mouse button
-        if (this.shooting && this.weapon.automatic) {
-          this.shoot();
-        }
-        
-        // Update bullets
-        for (let i = this.bullets.length - 1; i >= 0; i--) {
-          const active = this.bullets[i].update(deltaTime);
-          if (!active) {
-            this.bullets.splice(i, 1);
-          }
-        }
-        
-        // Update effects
-        for (let i = this.effects.length - 1; i >= 0; i--) {
-          const active = this.effects[i](deltaTime);
-          if (!active) {
-            this.effects.splice(i, 1);
-          }
-        }
-      }
-      
-      animate() {
-        requestAnimationFrame(this.animate);
-        
-        const deltaTime = Math.min(this.clock.getDelta(), 0.1);
-        this.update(deltaTime);
-        
-        // Render the scene
-        this.renderer.render(this.scene, this.camera);
       }
     }
+}
+}

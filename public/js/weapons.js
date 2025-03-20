@@ -21,11 +21,11 @@ class Weapon {
       switch(this.type) {
         case 'rifle':
           this.damage = 25;
-          this.fireRate = 2; // Reduced from 7 to 2 shots per second
+          this.fireRate = 5; // Increased from 2 to 5 shots per second
           this.reloadTime = 2.5;
           this.ammoCapacity = 30;
           this.range = 100;
-          this.recoil = 0.05; // Increased from 0.03 to 0.05
+          this.recoil = 0.05;
           this.accuracy = 0.85;
           this.automatic = true;
           break;
@@ -43,22 +43,22 @@ class Weapon {
           
         case 'smg':
           this.damage = 15;
-          this.fireRate = 4; // Reduced from 10 to 4
+          this.fireRate = 8; // Increased from 4 to 8
           this.reloadTime = 2;
           this.ammoCapacity = 25;
           this.range = 50;
-          this.recoil = 0.03; // Increased for better feedback
+          this.recoil = 0.03;
           this.accuracy = 0.8;
           this.automatic = true;
           break;
           
         case 'pistol':
           this.damage = 20;
-          this.fireRate = 2; // Reduced from 3 to 2
+          this.fireRate = 3; // Increased from 2 to 3
           this.reloadTime = 1.5;
           this.ammoCapacity = 12;
           this.range = 30;
-          this.recoil = 0.03; // Increased for better feedback
+          this.recoil = 0.03;
           this.accuracy = 0.85;
           this.automatic = false;
           break;
@@ -253,7 +253,7 @@ class Weapon {
       this.scene = scene;
       this.origin = origin;
       this.direction = direction;
-      this.speed = speed || 100;
+      this.speed = speed || 300; // Increased from 100 to 300
       this.owner = owner;
       this.traveled = 0;
       this.maxDistance = 200;
@@ -264,7 +264,8 @@ class Weapon {
     }
     
     createMesh() {
-      const geometry = new THREE.CylinderGeometry(0.03, 0.03, 0.3, 8);
+      // More visible bullet
+      const geometry = new THREE.CylinderGeometry(0.03, 0.03, 0.5, 8);
       const material = new THREE.MeshBasicMaterial({ color: 0xffff00 });
       this.mesh = new THREE.Mesh(geometry, material);
       
@@ -282,12 +283,13 @@ class Weapon {
     }
     
     createTrail() {
-      // Create simple particle trail
-      const particleCount = 5;
-      const particles = new THREE.Group();
+      // Create better particle trail
+      const particleCount = 10; // Increased from 5 to 10
+      this.particles = [];
+      this.trail = new THREE.Group();
       
       for (let i = 0; i < particleCount; i++) {
-        const size = 0.02 * (particleCount - i) / particleCount;
+        const size = 0.03 * (particleCount - i) / particleCount;
         const particle = new THREE.Mesh(
           new THREE.SphereGeometry(size, 8, 8),
           new THREE.MeshBasicMaterial({ 
@@ -297,11 +299,32 @@ class Weapon {
           })
         );
         
-        particles.add(particle);
+        // Store original position
+        particle.userData.offset = i * -0.15; // Spacing between particles
+        
+        this.particles.push(particle);
+        this.trail.add(particle);
       }
       
-      this.trail = particles;
       this.scene.add(this.trail);
+      
+      // Initial positions
+      this.updateTrailPositions();
+    }
+    
+    updateTrailPositions() {
+      // Place particles along bullet path
+      for (let i = 0; i < this.particles.length; i++) {
+        const particle = this.particles[i];
+        const offset = particle.userData.offset;
+        
+        // Create position by going backward from bullet position along direction
+        const position = this.mesh.position.clone().add(
+          this.direction.clone().multiplyScalar(offset)
+        );
+        
+        particle.position.copy(position);
+      }
     }
     
     update(deltaTime) {
@@ -316,17 +339,7 @@ class Weapon {
       this.mesh.position.add(movement);
       
       // Update trail positions
-      if (this.trail && this.trail.children.length > 0) {
-        for (let i = this.trail.children.length - 1; i >= 0; i--) {
-          if (i === 0) {
-            // First particle follows the bullet
-            this.trail.children[i].position.copy(this.mesh.position);
-          } else {
-            // Other particles follow the previous one
-            this.trail.children[i].position.copy(this.trail.children[i-1].position);
-          }
-        }
-      }
+      this.updateTrailPositions();
       
       // Check if bullet has traveled max distance
       if (this.traveled >= this.maxDistance) {
